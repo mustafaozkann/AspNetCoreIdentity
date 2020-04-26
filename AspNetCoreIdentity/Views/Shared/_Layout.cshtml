@@ -8,6 +8,11 @@
     <script src="~/lib/jquery-validate/jquery.validate.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
     <link href="~/lib/bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <script>
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">

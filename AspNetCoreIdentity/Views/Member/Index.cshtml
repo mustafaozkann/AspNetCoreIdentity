@@ -7,7 +7,15 @@
 <h3 class="text-center">Kullanıcı Bilgileri</h3>
 <div class="row">
     <div class="col-sm-3">
-        <img src="~/image/user.png" />
+        @if (Model.Picture == null)
+        {
+            <img src="~/image/user.png" />
+        }
+        else
+        {
+            <img src="@Model.Picture" />
+        }
+
     </div>
     <div class="col-sm-9">
         <table class="table table-bordered table-striped">
@@ -24,6 +32,18 @@
             <tr>
                 <th>@Html.DisplayNameFor(x => x.PhoneNumber)</th>
                 <td>@Model.PhoneNumber</td>
+            </tr>
+            <tr>
+                <th>@Html.DisplayNameFor(x => x.City)</th>
+                <td>@Model.City</td>
+            </tr>
+            <tr>
+                <th>@Html.DisplayNameFor(x => x.BirthDay)</th>
+                <td>@Model.BirthDay.Value.ToShortDateString()</td>
+            </tr>
+            <tr>
+                <th>@Html.DisplayNameFor(x => x.Gender)</th>
+                <td>@Model.Gender</td>
             </tr>
         </table>
     </div>

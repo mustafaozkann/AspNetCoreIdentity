@@ -12,27 +12,23 @@ using Microsoft.AspNetCore.Mvc;
 namespace AspNetCoreIdentity.Controllers
 {
 
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
 
-        public UserManager<AppUser> userManager { get; }
-        public SignInManager<AppUser> signInManager { get; }
-
-        public HomeController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager)
+        public HomeController(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager) : base(userManager, signInManager)
         {
-            this.userManager = userManager;
-            this.signInManager = signInManager;
+
         }
         public IActionResult Index()
         {
-            if (User.Identity.IsAuthenticated)
-            {
-                return RedirectToAction("Index", "Member");
-            }
+            //if (User.Identity.IsAuthenticated)
+            //{
+            //    return RedirectToAction("Index", "Member");
+            //}
             return View();
         }
 
-        // Giriş
+
         public IActionResult Login()
         {
             return View();
@@ -87,13 +83,11 @@ namespace AspNetCoreIdentity.Controllers
         }
 
 
-        [Route("uye-ol")]
-        // Üye ol
         public IActionResult SignUp()
         {
             return View();
         }
-        [Route("uye-ol")]
+
         [HttpPost]
         public async Task<IActionResult> SignUp(UserViewModel userViewModel)
         {
@@ -113,10 +107,7 @@ namespace AspNetCoreIdentity.Controllers
                 }
                 else
                 {
-                    foreach (IdentityError item in result.Errors)
-                    {
-                        ModelState.AddModelError("", item.Description);
-                    }
+                    AddErrorsToModelState(result);
                 }
             }
             return View(userViewModel);
@@ -182,11 +173,7 @@ namespace AspNetCoreIdentity.Controllers
                 }
                 else
                 {
-                    foreach (var item in result.Errors)
-                    {
-                        ModelState.AddModelError("", item.Description);
-                    }
-
+                    AddErrorsToModelState(result);
                 }
             }
             else

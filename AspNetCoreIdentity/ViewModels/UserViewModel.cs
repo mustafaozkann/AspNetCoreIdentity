@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AspNetCoreIdentity.Enums;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -32,5 +33,17 @@ namespace AspNetCoreIdentity.ViewModels
         [DataType(DataType.Password)]
         [Compare("Password", ErrorMessage = "Şifre ve şifre tekrar alanları uyuşmuyor.")]
         public string RePassword { get; set; }
+
+        [DisplayName("Doğum Tarihi")]
+        [DataType(DataType.Date)]
+        public DateTime? BirthDay { get; set; }
+
+        public string Picture { get; set; }
+
+        [DisplayName("Şehir")]
+        public string City { get; set; }
+
+        [DisplayName("Cinsiyet")]
+        public Gender Gender { get; set; }
     }
 }
