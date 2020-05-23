@@ -20,5 +20,10 @@ namespace AspNetCoreIdentity.Controllers
         {
             return View(userManager.Users.ToList());
         }
+
+        public IActionResult Claims()
+        {
+            return View(User.Claims.ToString());
+        }
     }
 }

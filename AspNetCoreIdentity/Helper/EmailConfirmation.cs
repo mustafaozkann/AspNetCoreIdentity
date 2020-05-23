@@ -1,20 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Net.Mail;
 using System.Net;
+using System.Net.Mail;
+using System.Threading.Tasks;
 
 namespace AspNetCoreIdentity.Helper
 {
-    public static class PasswordReset
+    public static class EmailConfirmation
     {
-        public static bool PasswordResetSendEmail(string link, string email)
+        public static bool SendEmail(string link, string email)
         {
-            //MailMessage mail = new MailMessage();
-
-            //var smptClient = new SmtpClient("")
-
             bool IsMailSend = false;
 
             try
@@ -25,8 +21,8 @@ namespace AspNetCoreIdentity.Helper
                     var mail = new MailMessage()
                     {
                         From = new MailAddress(credentials.UserName),
-                        Subject = "Şifremi Unuttum",
-                        Body = $"<h2>Şifrenizi yenilemek için linke tıklayarak yeni şifrenizi oluşturabilirsiniz.</h2><hr> <a href='{link}'> Şifre Yenileme Linki</a>"
+                        Subject = "Email Doğrulama",
+                        Body = $"<h2>Email adresinizi doğrulamak için lütfen aşağıdaki linke tıklayınız.</h2><hr> <a href='{link}'> Email doğrulama linki</a>"
                     };
                     mail.IsBodyHtml = true;
                     mail.To.Add(email);

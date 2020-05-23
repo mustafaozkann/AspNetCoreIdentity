@@ -39,7 +39,12 @@
             </tr>
             <tr>
                 <th>@Html.DisplayNameFor(x => x.BirthDay)</th>
-                <td>@Model.BirthDay.Value.ToShortDateString()</td>
+                <td>
+                    @if (Model.BirthDay != null)
+                    {
+                        @Model.BirthDay.Value.ToShortDateString()
+                    }
+                </td>
             </tr>
             <tr>
                 <th>@Html.DisplayNameFor(x => x.Gender)</th>

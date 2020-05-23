@@ -8,6 +8,7 @@ using AspNetCoreIdentity.ViewModels;
 using DataAccess.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PhoneNumbers;
 
 namespace AspNetCoreIdentity.Controllers
 {
@@ -49,29 +50,45 @@ namespace AspNetCoreIdentity.Controllers
                         return View(model);
                     }
 
-                    await signInManager.SignOutAsync();
-                    var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, true);
-
-                    if (result.Succeeded)
+                    var isPasswordCorrect = await userManager.CheckPasswordAsync(user, model.Password);
+                    if (isPasswordCorrect)
                     {
-                        //await userManager.ResetAccessFailedCountAsync(user);
-                        return RedirectToAction("Index", "Member");
-                    }
-                    else
-                    {
-
-                        //await userManager.AccessFailedAsync(user);
-                        var failedCount = await userManager.GetAccessFailedCountAsync(user);
-                        if (failedCount == 3)
+                        if (!await userManager.IsEmailConfirmedAsync(user))
                         {
-                            await userManager.SetLockoutEndDateAsync(user, new DateTimeOffset(DateTime.Now.AddSeconds(30)));
-                            ModelState.AddModelError("", "Hesabınız 3 başarısız girişten dolayı 20 dakika süreyle kilitlenmiştir. Lütfen daha sonra tekrar deneyiniz");
+                            ModelState.AddModelError("", "Hesabınız doğrulanmamıştır. Lütfen gelen emaile tıklayarak hesabınızı doğrulayınız.");
+                            return View(model);
+                        }
+
+                        await signInManager.SignOutAsync();
+                        var result = await signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, true);
+
+                        if (result.Succeeded)
+                        {
+                            //await userManager.ResetAccessFailedCountAsync(user);
+                            return RedirectToAction("Index", "Member");
                         }
                         else
                         {
-                            ModelState.AddModelError("", "E-posta adresiniz ya da şifreniz yanlış.");
+
+                            //await userManager.AccessFailedAsync(user);
+                            var failedCount = await userManager.GetAccessFailedCountAsync(user);
+                            if (failedCount == 3)
+                            {
+                                await userManager.SetLockoutEndDateAsync(user, new DateTimeOffset(DateTime.Now.AddSeconds(30)));
+                                ModelState.AddModelError("", "Hesabınız 3 başarısız girişten dolayı 20 dakika süreyle kilitlenmiştir. Lütfen daha sonra tekrar deneyiniz");
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", "E-posta adresiniz ya da şifreniz yanlış.");
+                            }
                         }
                     }
+                    else
+                    {
+                        ModelState.AddModelError("", "E-posta adresiniz ya da şifreniz yanlış.");
+                    }
+
+
 
                 }
                 else
@@ -93,6 +110,19 @@ namespace AspNetCoreIdentity.Controllers
         {
             if (ModelState.IsValid)
             {
+                PhoneNumberUtil phoneUtil = PhoneNumberUtil.GetInstance();
+                string telephoneNumber = userViewModel.PhoneNumber;
+                string countryCode = "TR";
+                PhoneNumbers.PhoneNumber phoneNumber = phoneUtil.Parse(telephoneNumber, countryCode);
+
+                bool isValidRegion = phoneUtil.IsValidNumberForRegion(phoneNumber, countryCode);
+
+                if (!isValidRegion)
+                {
+                    ModelState.AddModelError("", "Geçerli telefon numarası giriniz");
+                    return View(userViewModel);
+                }
+
                 AppUser user = new AppUser()
                 {
                     UserName = userViewModel.UserName,
@@ -103,6 +133,16 @@ namespace AspNetCoreIdentity.Controllers
                 IdentityResult result = await userManager.CreateAsync(user, userViewModel.Password);
                 if (result.Succeeded)
                 {
+                    string emailConfirmationToken = await userManager.GenerateEmailConfirmationTokenAsync(user);
+                    string confirmationLink = Url.Action("ConfirmEmail", "Home", new
+                    {
+                        userId = user.Id,
+                        token = emailConfirmationToken
+
+                    }, protocol: HttpContext.Request.Scheme);
+
+                    EmailConfirmation.SendEmail(confirmationLink, user.Email);
+
                     return RedirectToAction("Login");
                 }
                 else
@@ -173,15 +213,40 @@ namespace AspNetCoreIdentity.Controllers
                 }
                 else
                 {
+                    TempData["userId"] = userId;
+                    TempData["token"] = token;
                     AddErrorsToModelState(result);
                 }
             }
             else
             {
                 ModelState.AddModelError("", "Hata meydana gelmiştir. Lütfen daha sonra tekrar deneyiniz.");
+                TempData["userId"] = userId;
+                TempData["token"] = token;
             }
 
             return View(resetPasswordViewModel);
         }
+
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                IdentityResult result = await userManager.ConfirmEmailAsync(user, token);
+
+                if (result.Succeeded)
+                {
+                    ViewBag.status = "Email adresiniz onaylanmıştır. Login ekranından giriş yapabilirsiniz.";
+                }
+                else
+                {
+                    ViewBag.status = "Bir hata meydana geldi. Lütfen daha sonra tekrar deneyiniz";
+                }
+            }
+            return View();
+        }
+
+
     }
 }
