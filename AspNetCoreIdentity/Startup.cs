@@ -33,13 +33,22 @@ namespace AspNetCoreIdentity
                 MaxFailedAccessAttempts = 3
             };
 
+            services.AddAuthentication().AddFacebook(options =>
+            {
+                options.AppId = Configuration["Authentication:Facebook:AppId"];
+                options.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
+            }).AddGoogle(options =>
+            {
+                options.ClientId = Configuration["Authentication:Google:ClientID"];
+                options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+            });
+
             services.AddIdentity<AppUser, AppRole>(options =>
             {
                 options.Lockout = lockoutOptions;
 
-
                 options.User.RequireUniqueEmail = true;
-
+                options.User.AllowedUserNameCharacters = "abcçdefgğhıijklmnoöpqrsştuüvwxyzABCÇDEFGHIİJKLMNOÖPQRSŞTUÜVWXYZ0123456789-._";
 
                 // Password validation
                 options.Password.RequiredLength = 4;

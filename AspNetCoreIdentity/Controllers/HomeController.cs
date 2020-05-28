@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AspNetCoreIdentity.Helper;
 
@@ -22,10 +23,10 @@ namespace AspNetCoreIdentity.Controllers
         }
         public IActionResult Index()
         {
-            //if (User.Identity.IsAuthenticated)
-            //{
-            //    return RedirectToAction("Index", "Member");
-            //}
+            if (User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Index", "Member");
+            }
             return View();
         }
 
@@ -87,8 +88,6 @@ namespace AspNetCoreIdentity.Controllers
                     {
                         ModelState.AddModelError("", "E-posta adresiniz ya da şifreniz yanlış.");
                     }
-
-
 
                 }
                 else
@@ -246,6 +245,90 @@ namespace AspNetCoreIdentity.Controllers
             }
             return View();
         }
+
+
+        public IActionResult FacebookLogin(string returnUrl)
+        {
+            string redirectUrl = Url.Action("ExternalResponse", "Home", new { returnUrl = returnUrl });
+
+            var properties = signInManager.ConfigureExternalAuthenticationProperties("Facebook", redirectUrl);
+
+            return new ChallengeResult("Facebook", properties);
+        }
+
+        public IActionResult GoogleLogin(string returnUrl)
+        {
+            string redirectUrl = Url.Action("ExternalResponse", "Home", new { returnUrl = returnUrl });
+
+            var properties = signInManager.ConfigureExternalAuthenticationProperties("Google", redirectUrl);
+
+            return new ChallengeResult("Google", properties);
+        }
+
+        public async Task<IActionResult> ExternalResponse(string returnUrl = "/")
+        {
+            ExternalLoginInfo info = await signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                return RedirectToAction("Login");
+            }
+            else
+            {
+                Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, true);
+
+                if (result.Succeeded)
+                {
+                    return Redirect(returnUrl);
+                }
+                else
+                {
+                    AppUser user = new AppUser();
+                    user.Email = info.Principal.FindFirst(ClaimTypes.Email).Value;
+                    string ExternalUserId = info.Principal.FindFirst(ClaimTypes.NameIdentifier).Value;
+                    if (info.Principal.HasClaim(x => x.Type == ClaimTypes.Name))
+                    {
+                        string userName = info.Principal.FindFirst(ClaimTypes.Name).Value;
+                        userName = userName.Replace(' ', '-').ToLower() + ExternalUserId.Substring(0, 5).ToString();
+                        user.UserName = userName;
+                    }
+                    else
+                    {
+                        user.UserName = info.Principal.FindFirst(ClaimTypes.Email).Value;
+                    }
+
+                    IdentityResult createResult = await userManager.CreateAsync(user);
+
+                    if (createResult.Succeeded)
+                    {
+                        IdentityResult loginResult = await userManager.AddLoginAsync(user, info);
+
+                        if (loginResult.Succeeded)
+                        {
+                            //await signInManager.SignInAsync(user, true);
+                            //alternative login
+                            await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, true);
+                            return Redirect(returnUrl);
+                        }
+                        else
+                        {
+                            AddErrorsToModelState(loginResult);
+                        }
+                    }
+                    else
+                    {
+                        AddErrorsToModelState(createResult);
+                    }
+                }
+            }
+            List<string> errors = ModelState.Values.SelectMany(x => x.Errors).Select(y => y.ErrorMessage).ToList();
+            return View("Error", errors);
+        }
+
+        public ActionResult Error()
+        {
+            return View();
+        }
+
 
 
     }
