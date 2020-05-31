@@ -16,6 +16,7 @@ namespace AspNetCoreIdentity.ViewModels
         public string UserName { get; set; }
 
         [DisplayName("Tel No")]
+        [Required(ErrorMessage = "Telefon numarası boş geçilemez.")]
         public string PhoneNumber { get; set; }
 
         [Required(ErrorMessage = "Email alanı boş geçilemez.")]

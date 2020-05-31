@@ -14,6 +14,7 @@ namespace DataAccess.Context
         public string Picture { get; set; }
         public DateTime? BirthDay { get; set; }
         public int Gender { get; set; }
+        public int MyProperty { get; set; }
 
     }
 }

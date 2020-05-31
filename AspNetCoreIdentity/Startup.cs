@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AspNetCoreIdentity.TwoFactorServices;
 using DataAccess.Context;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.AzureAD.UI;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +28,10 @@ namespace AspNetCoreIdentity
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<AppIdentityDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnectionString")));
+            services.Configure<TwoFactorOptions>(Configuration.GetSection("TwoFactorOptions"));
+            services.AddDbContext<AppIdentityDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultAzureConnectionString")));
+
+            //services.AddDbContext<AppIdentityDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnectionString")));
 
             var lockoutOptions = new LockoutOptions()
             {
@@ -42,6 +49,22 @@ namespace AspNetCoreIdentity
                 options.ClientId = Configuration["Authentication:Google:ClientID"];
                 options.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
             });
+
+            //.AddMicrosoftAccount(opts =>
+            // {
+            //     opts.ClientId = Configuration["Authentication:Microsoft:ClientID"];
+            //     opts.ClientSecret = Configuration["Authentication:Microsoft:ClientSecret"];
+            // })
+
+            //services.AddAuthentication(AzureADDefaults.AuthenticationScheme)
+            //  .AddAzureAD(options => Configuration.Bind("AzureAd", options));
+
+            //services.Configure<OpenIdConnectOptions>(AzureADDefaults.OpenIdScheme, options =>
+            //{
+            //    options.Authority = options.Authority + "/v2.0/";
+
+            //    options.TokenValidationParameters.ValidateIssuer = false;
+            //});
 
             services.AddIdentity<AppUser, AppRole>(options =>
             {

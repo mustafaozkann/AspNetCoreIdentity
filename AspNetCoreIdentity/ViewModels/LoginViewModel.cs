@@ -11,7 +11,7 @@ namespace AspNetCoreIdentity.ViewModels
     {
         [DisplayName("Email adresiniz")]
         [Required(ErrorMessage = "Email adresiniz gereklidir")]
-        [EmailAddress(ErrorMessage ="Email adresiniz doğru formatta değil.")]
+        [EmailAddress(ErrorMessage = "Email adresiniz doğru formatta değil.")]
         public string Email { get; set; }
 
         [DisplayName("Şifreniz")]

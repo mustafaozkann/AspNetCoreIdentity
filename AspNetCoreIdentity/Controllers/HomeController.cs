@@ -140,7 +140,7 @@ namespace AspNetCoreIdentity.Controllers
 
                     }, protocol: HttpContext.Request.Scheme);
 
-                    EmailConfirmation.SendEmail(confirmationLink, user.Email);
+                    EmailConfirmation.SendEmailWithSendGrid(confirmationLink, user.Email).Wait();
 
                     return RedirectToAction("Login");
                 }
@@ -174,7 +174,7 @@ namespace AspNetCoreIdentity.Controllers
                 }, HttpContext.Request.Scheme);
                 // url/Home/ResetPasswordConfirm?userId=1234&token=asd123
 
-                var IsMailSend = PasswordReset.PasswordResetSendEmail(passwordResetLink, user.Email);
+                var IsMailSend = PasswordReset.PasswordResetSendEmailWithSendGrid(passwordResetLink, user.Email);
                 ViewBag.Status = "success";
             }
             else
@@ -265,6 +265,15 @@ namespace AspNetCoreIdentity.Controllers
             return new ChallengeResult("Google", properties);
         }
 
+        public IActionResult MicrosoftLogin(string returnUrl)
+        {
+            string redirectUrl = Url.Action("ExternalResponse", "Home", new { returnUrl = returnUrl });
+
+            var properties = signInManager.ConfigureExternalAuthenticationProperties("Microsoft", redirectUrl);
+
+            return new ChallengeResult("Microsoft", properties);
+        }
+
         public async Task<IActionResult> ExternalResponse(string returnUrl = "/")
         {
             ExternalLoginInfo info = await signInManager.GetExternalLoginInfoAsync();
@@ -285,6 +294,7 @@ namespace AspNetCoreIdentity.Controllers
                     AppUser user = new AppUser();
                     user.Email = info.Principal.FindFirst(ClaimTypes.Email).Value;
                     string ExternalUserId = info.Principal.FindFirst(ClaimTypes.NameIdentifier).Value;
+                    user.EmailConfirmed = true;
                     if (info.Principal.HasClaim(x => x.Type == ClaimTypes.Name))
                     {
                         string userName = info.Principal.FindFirst(ClaimTypes.Name).Value;
@@ -296,27 +306,38 @@ namespace AspNetCoreIdentity.Controllers
                         user.UserName = info.Principal.FindFirst(ClaimTypes.Email).Value;
                     }
 
-                    IdentityResult createResult = await userManager.CreateAsync(user);
-
-                    if (createResult.Succeeded)
+                    AppUser user2 = await userManager.FindByNameAsync(ClaimTypes.Email);
+                    if (user2 == null)
                     {
-                        IdentityResult loginResult = await userManager.AddLoginAsync(user, info);
+                        IdentityResult createResult = await userManager.CreateAsync(user);
 
-                        if (loginResult.Succeeded)
+                        if (createResult.Succeeded)
                         {
-                            //await signInManager.SignInAsync(user, true);
-                            //alternative login
-                            await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, true);
-                            return Redirect(returnUrl);
+                            IdentityResult loginResult = await userManager.AddLoginAsync(user, info);
+
+                            if (loginResult.Succeeded)
+                            {
+                                //await signInManager.SignInAsync(user, true);
+                                //alternative login
+                                await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, true);
+                                return Redirect(returnUrl);
+                            }
+                            else
+                            {
+                                AddErrorsToModelState(loginResult);
+                            }
                         }
                         else
                         {
-                            AddErrorsToModelState(loginResult);
+                            AddErrorsToModelState(createResult);
                         }
                     }
                     else
                     {
-                        AddErrorsToModelState(createResult);
+                        IdentityResult loginResult = await userManager.AddLoginAsync(user2, info);
+                        await signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, true);
+
+                        return Redirect(returnUrl);
                     }
                 }
             }
@@ -325,6 +346,12 @@ namespace AspNetCoreIdentity.Controllers
         }
 
         public ActionResult Error()
+        {
+            return View();
+        }
+
+
+        public ActionResult Policy()
         {
             return View();
         }

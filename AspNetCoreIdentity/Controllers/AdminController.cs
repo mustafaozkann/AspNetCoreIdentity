@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCoreIdentity.Controllers
 {
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public class AdminController : Controller
     {
         private UserManager<AppUser> userManager { get; }

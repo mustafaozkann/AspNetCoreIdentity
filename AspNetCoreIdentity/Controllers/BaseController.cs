@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AspNetCoreIdentity.Controllers
 {
+   
     public class BaseController : Controller
     {
         protected UserManager<AppUser> userManager { get; }
